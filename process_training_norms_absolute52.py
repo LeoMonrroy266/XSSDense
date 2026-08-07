@@ -102,134 +102,16 @@ def plot_latent_pca(vae, tfrecord_path, save_path, batch_size=16):
 
 
 # ───────────────────────────────
-# Loss plotting
-# ───────────────────────────────
-def plot_losses(path):
-    import re
-    log_file = f"{path}/log.txt"
-    epoch_train_loss, test_loss = [], []
-    train_mse, train_kl = [], []
-
-    with open(log_file, "r") as f:
-        for line in f:
-            m_train = re.match(r".*Loss:\s*([\d.]+),\s*MSE:\s*([\d.]+),\s*KL:\s*([\d.]+)", line)
-            if m_train and "Summary" not in line:
-                _, mse, kl = map(float, m_train.groups())
-                train_mse.append(mse)
-                train_kl.append(kl)
-                continue
-
-            m_summary = re.match(r".*TrainLoss:\s*([\d.]+),\s*TestLoss:\s*([\d.]+).*", line)
-            if m_summary:
-                tr, te = map(float, m_summary.groups())
-                epoch_train_loss.append(tr)
-                test_loss.append(te)
-
-    fig, ax = plt.subplots(figsize=(12,7))
-    ax.plot(test_loss, label="Test Loss")
-    ax.plot(epoch_train_loss, label="Training Loss")
-    ax.legend()
-    fig.savefig(f"{path}/loss_plot.png")
-    plt.close()
-
-    print(f"Saved loss_plot.png to {path}")
-
-def normalize_minmax(x, xmin, xmax):
-    return ((x - xmin) / (xmax - xmin)).astype(np.float32)
-
-def unnormalize_minmax(x_norm, xmin, xmax):
-    return (x_norm * (xmax - xmin) + xmin).astype(np.float32)
-
-# ───────────────────────────────
-# Difference analysis with fixed lattice
-# ───────────────────────────────
-def run_difference_analysis(
-    vae,
-    ref_path,
-    tgt_path,
-    params_file,
-    meta_json,
-    save_dir
-):
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Load reference and target voxel grids
-    vox_ref = np.load(ref_path).astype(np.float32)
-    vox_tgt = np.load(tgt_path).astype(np.float32)
-
-    # Load normalization param
-    with open (params_file) as f:
-        meta = json.load(f)
-
-    xmin = float(meta["normalization"]["min"])
-    xmax = float(meta["normalization"]["max"])
-    
-    
-
-
-    # Load voxel spacing from meta.json
-    voxel_size_A = meta_json   # Å per voxel
-    print(f"Using voxel spacing = {voxel_size_A} Å")
-
-    # scaling factor ignored → fixed grid
-    scaling_factor = np.ones((1))[0]
-
-    # Normalize
-    target_norm = normalize_minmax(vox_tgt, xmin, xmax)
-
-    # Encode → decode
-    batch = target_norm[None,...,None]
-    mean, _ = vae.encode(batch)
-    decoded = vae.decode(mean).numpy()[0,...,0]
-
-    decoded_target = unnormalize_minmax(decoded, xmin, xmax)  # back to e/Å^3
-
-
-    # Save arrays
-    np.save(os.path.join(save_dir,"reference.npy"), vox_ref)
-    np.save(os.path.join(save_dir,"target.npy"), vox_tgt)
-    np.save(os.path.join(save_dir,"target_norm.npy"), target_norm)
-    np.save(os.path.join(save_dir,"decoded_target.npy"), decoded_target)
-    print("Saved NumPy outputs.")
-
-    create_ccp4_map_(decoded_target, os.path.join(save_dir,"decoded_target.ccp4"),
-                     voxel_size=voxel_size_A)
-
-    create_ccp4_map_(vox_tgt, os.path.join(save_dir,"target_voxel.ccp4"),
-                     voxel_size=voxel_size_A)
-
-    print("Saved CCP4 maps.")
-
-    # Metrics
-    mse = np.mean((vox_tgt - decoded_target)**2)
-    corr = pearsonr(vox_tgt.flatten(), decoded_target.flatten())[0]
-    print(f"MSE = {mse:.6f} | Corr = {corr:.6f}")
-
-    return mse, corr
-
-
-# ───────────────────────────────
 # CLI
 # ───────────────────────────────
 if __name__ == "__main__":
-    if len(sys.argv) != 8:
-        print("Usage:")
-        print("  python run_voxel_diff_analysis_fixed_lattice.py "
-              "<model_dir> <tfrecord> <reference.npy> <target.npy> "
-              "<norm_params.npz> <meta_dir> <save_dir>")
-        print("Note: meta.json MUST be in <save_dir>/../meta/meta.json "
-              "or adapt the path inside the script.")
-        sys.exit(1)
-
     model_dir = sys.argv[1]
     tfrecord_path = sys.argv[2]
-    ref_path = sys.argv[3]
-    tgt_path = sys.argv[4]
-    params_file = sys.argv[5]
-    save_dir = sys.argv[7]
+    params_file = sys.argv[3]
+    save_dir = sys.argv[4]
 
     # Locate meta.json automatically
-    meta_json = sys.argv[6]
+    meta_json = sys.argv[5]
 
     # Restore VAE
     encoder = tf.keras.models.load_model(os.path.join(model_dir,"encoder_model.keras"))
@@ -240,16 +122,7 @@ if __name__ == "__main__":
     print("Plotting Latent PCA…")
     plot_latent_pca(vae, tfrecord_path, save_dir)
 
-    print("Plotting losses…")
-    plot_losses(model_dir)
+    #print("Plotting losses…")
+    #plot_losses(model_dir)
 
-    print("Running Difference Analysis…")
-   # run_difference_analysis(
-   #     vae,
-   #     ref_path,
-   #     tgt_path,
-   #     params_file,
-   #     meta_json,
-   #     save_dir
-   # )
 
