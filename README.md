@@ -163,7 +163,8 @@ The reconstruction script performs latent-space optimization using a genetic alg
 |-----------|-------------|
 | `trained decoder` | Decoder network from a trained VAE. |
 | `trained encoder` | Encoder network from a trained VAE. |
-| `experimental XSS data` | Experimental scattering curve used as reconstruction target. |
+| `experimental XSS data` | Experimental scattering curve of the ground state |
+| `experimental difference data` | Experimental scattering curve used as reconstruction target. |
 | `ground-state voxel` | Reference density map. |
 | `latent statistics` | Latent-space normalization statistics obtained from `process_training_norms_absolute52.py`. |
 | `output folder` | Directory where reconstruction outputs are written. |
@@ -181,6 +182,7 @@ The reconstruction script performs latent-space optimization using a genetic alg
 python main_reconstruction_ga_may25_absolute.py \
     --model_dir trained_model/ \
     --iq experimental.dat \
+    --diff experimental.dat \
     --ground_state dark.npy \
     --latent_stats latent_stats.json \
     --output reconstruction/
@@ -188,11 +190,10 @@ python main_reconstruction_ga_may25_absolute.py \
 
 The reconstruction algorithm uses:
 
-- Experimental XSS scattering data
+- Experimental absolute and difference scattering data
 - Trained encoder and decoder models
 - Ground-state density map
 - Latent means and standard deviations
-- 
 ---
 
 ## Method Overview
