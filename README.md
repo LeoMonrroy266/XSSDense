@@ -148,13 +148,44 @@ These latent statistics are subsequently used by the genetic algorithm during re
 
 ---
 
-### 4. Reconstruct electron densities from XSS data
+### 4. Reconstruct electron densities
 
 Run reconstruction using the trained VAE and experimental XSS data.
 
 ```bash
 python main_reconstruction_ga_may25_absolute.py \
-    <reconstruction_parameters>
+    <arguments>
+```
+
+#### Key reconstruction parameters
+
+The reconstruction script performs latent-space optimization using a genetic algorithm and requires:
+
+| Parameter | Description |
+|-----------|-------------|
+| `trained decoder` | Decoder network from a trained VAE. |
+| `trained encoder` | Encoder network from a trained VAE. |
+| `experimental XSS data` | Experimental scattering curve used as reconstruction target. |
+| `ground-state voxel` | Reference density map. |
+| `latent statistics` | Latent-space normalization statistics obtained from `process_training_norms_absolute52.py`. |
+| `output folder` | Directory where reconstruction outputs are written. |
+| `target yield` | Excited-state population used during ΔI modelling. |
+| `yield weight` | Weight applied to yield optimization. |
+| `voxel size` | Voxel spacing in Å. |
+| `rho_bulk` | Bulk solvent electron density. |
+| `population size` | Number of latent-space candidates maintained by the genetic algorithm. |
+| `batch size` | Number of candidates evaluated simultaneously. |
+| `max iterations` | Maximum number of optimization rounds. |
+
+#### Example
+
+```bash
+python main_reconstruction_ga_may25_absolute.py \
+    --model_dir trained_model/ \
+    --iq experimental.dat \
+    --ground_state dark.npy \
+    --latent_stats latent_stats.json \
+    --output reconstruction/
 ```
 
 The reconstruction algorithm uses:
@@ -162,10 +193,8 @@ The reconstruction algorithm uses:
 - Experimental XSS scattering data
 - Trained encoder and decoder models
 - Ground-state density map
-- Latent-space means and standard deviations
-- Physical scattering parameters
-- Genetic algorithm optimization
-
+- Latent means and standard deviations
+- 
 ---
 
 ## Method Overview
