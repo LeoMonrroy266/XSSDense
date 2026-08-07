@@ -2,7 +2,36 @@
 
 **Reconstructing electron densities from X-ray solution scattering data using a Variational Autoencoder**
 
-XSSDense is a framework for reconstructing three-dimensional electron density maps from X-ray solution scattering (XSS) data using deep generative models. The workflow consists of voxelisation of structural models, generation of TFRecord datasets, training of a variational autoencoder (VAE), and reconstruction of electron densities from scattering profiles.
+XSSDense is a framework for reconstructing three-dimensional electron density maps from X-ray solution scattering (XSS) data using deep generative models. The workflow consists of voxelisation of structural models, generation of training datasets, training of a variational autoencoder (VAE), extraction of latent-space statistics, and reconstruction of electron densities from scattering profiles.
+
+---
+
+## Workflow
+
+```text
+PDB Structures
+      │
+      ▼
+Voxelisation
+      │
+      ▼
+3D Density Grids (.npy)
+      │
+      ▼
+TFRecord Generation
+      │
+      ▼
+β-VAE Training
+      │
+      ▼
+Latent Space Statistics
+      │
+      ▼
+Genetic Algorithm Reconstruction
+      │
+      ▼
+3D Electron Density Map
+```
 
 ---
 
@@ -14,89 +43,151 @@ Convert voxelized density maps stored as NumPy arrays into TensorFlow TFRecords.
 
 ```bash
 python voxel_tf_fixed44.py \
-    <npy_directory> \
-    <reference.npy> \
-    <output_directory>
+    voxel_directory/ \
+    reference.npy \
+    tfrecord_output/
 ```
+
+#### Arguments
+
+| Argument | Description |
+|-----------|-------------|
+| `voxel_directory` | Directory containing voxelized density maps in `.npy` format. |
+| `reference.npy` | Reference density map used for normalization. |
+| `tfrecord_output` | Directory where TFRecords and metadata are saved. |
+
+---
 
 ### 2. Train the VAE
 
-Train the β-VAE using the generated TFRecords.
+Train a β-VAE on the generated TFRecord dataset.
 
 ```bash
 python Train_VAE.py \
     train.tfrecord \
     test.tfrecord \
     experiment_name \
-    train \
+    late \
     1.0
 ```
 
-### 3. Reconstruct electron densities
+#### Arguments
+
+| Argument | Description |
+|-----------|-------------|
+| `train.tfrecord` | Training dataset. |
+| `test.tfrecord` | Independent test dataset. |
+| `experiment_name` | Name used for saved outputs. |
+| `mode` | β scheduling mode. Use `constant` for fixed β or `late` for β warm-up scheduling. |
+| `beta` | Constant β value or final β value reached during warm-up. |
+
+#### Examples
+
+Fixed β-VAE:
+
+```bash
+python Train_VAE.py \
+    train.tfrecord \
+    test.tfrecord \
+    beta1 \
+    constant \
+    1.0
+```
+
+β warm-up training:
+
+```bash
+python Train_VAE.py \
+    train.tfrecord \
+    test.tfrecord \
+    beta10 \
+    late \
+    10.0
+```
+
+Outputs:
+
+```text
+_log/
+├── encoder_model.keras
+├── decoder_model.keras
+├── vae_final.weights.h5
+└── log.txt
+```
+
+---
+
+### 3. Generate latent-space statistics
+
+After training, the latent-space distribution of the training set is analyzed. The mean and standard deviation of each latent dimension are extracted and saved for use during reconstruction.
+
+These statistics define the region of latent space explored by the reconstruction algorithm and improve optimization efficiency.
+
+```bash
+python process_training_norms_absolute52.py \
+    <model_directory> \
+    <reference.npy> \
+    <target.npy> \
+    <normalization_parameters.npz> \
+    <meta_directory> \
+    <output_directory>
+```
+
+Outputs may include:
+
+```text
+latent_statistics/
+├── latent_means.npy
+├── latent_std.npy
+├── latent_pca.png
+├── analysis_results/
+└── reconstructed_maps/
+```
+
+These latent statistics are subsequently used by the genetic algorithm during reconstruction.
+
+---
+
+### 4. Reconstruct electron densities from XSS data
 
 Run reconstruction using the trained VAE and experimental XSS data.
 
 ```bash
 python main_reconstruction_ga_may25_absolute.py \
-    <arguments>
+    <reconstruction_parameters>
 ```
+
+The reconstruction algorithm uses:
+
+- Experimental XSS scattering data
+- Trained encoder and decoder models
+- Ground-state density map
+- Latent-space means and standard deviations
+- Physical scattering parameters
+- Genetic algorithm optimization
 
 ---
 
 ## Method Overview
 
-```text
-PDB Structures
-      │
-      ▼
-Voxelisation
-      │
-      ▼
-NumPy Density Grids
-      │
-      ▼
-TFRecord Generation
-      │
-      ▼
-Variational Autoencoder
-      │
-      ▼
-Latent Space Representation
-      │
-      ▼
-Genetic-Algorithm Reconstruction
-      │
-      ▼
-3D Electron Density Map
-```
-
----
-
-## Voxelisation
+### Voxelisation
 
 Before training the VAE, PDB structures must be converted into 3D voxel grids representing the electron density distribution. The voxelisation process transforms atomic coordinates into fixed-size three-dimensional matrices that can be used as input for the neural network.
 
 The voxelisation is performed using atomic form factors, producing standardized volumetric representations suitable for training.
 
-The resulting NumPy density maps are converted into TensorFlow TFRecords using:
-
-```bash
-python voxel_tf_fixed44.py \
-    <npy_directory> \
-    <reference.npy> \
-    <output_directory>
-```
+The resulting voxelized density maps are stored as NumPy arrays and subsequently converted into TensorFlow TFRecords using `voxel_tf_fixed44.py`.
 
 ---
 
-## Training and Validation
+### Training and Validation
 
-The VAE is trained on voxelised structures represented as 52×52×52 density grids.
+The VAE is trained on voxelised structures represented as 52 × 52 × 52 electron-density grids.
 
 The dataset is initially split into:
 
 - 90% training data
-- 10% test data
+- 10% independent test data
 
 A validation subset is used during training to monitor model performance.
 
@@ -105,47 +196,51 @@ Model performance is monitored throughout training using:
 - Training loss
 - Validation loss
 - Test loss
-- Reconstruction error metrics
-- Latent-space visualisation and analysis
+- Reconstruction errors
+- Latent-space visualization
+- Principal component analysis of latent representations
 
-The implemented model is a β-VAE with scheduled regularization that balances reconstruction accuracy and latent-space organization.
+The implemented architecture is a β-VAE with configurable latent-space regularization. Two training modes are supported:
 
-Example training command:
+- `constant`: fixed β throughout training.
+- `late`: β warm-up scheduling, where β is gradually increased during training.
 
-```bash
-python Train_VAE.py \
-    train.tfrecord \
-    test.tfrecord \
-    experiment_name \
-    train \
-    1.0
-```
-
-Outputs include:
-
-- Trained encoder model
-- Trained decoder model
-- Trained VAE weights
-- Training logs
+Outputs include trained encoder and decoder networks together with the final VAE weights.
 
 ---
 
-## Reconstruction
+### Latent-Space Analysis
+
+Following training, latent representations of the training set are analyzed using the trained encoder.
+
+For each latent dimension, the following quantities are computed:
+
+- Mean latent value
+- Standard deviation
+- Principal-component projections
+- Latent-space visualizations
+
+These statistics define the expected latent-space distribution and are used to initialize and constrain latent-space searches during reconstruction.
+
+---
+
+### Reconstruction
 
 Once the VAE has been trained, the reconstruction pipeline can be used to generate electron-density maps from X-ray solution scattering (XSS) data.
 
-The reconstruction algorithm employs a genetic algorithm to optimize the latent-space representation of the VAE. Candidate latent vectors are decoded into electron-density maps, and corresponding scattering profiles are calculated and compared against experimental XSS measurements.
+The reconstruction algorithm employs a genetic algorithm operating directly in the latent space of the trained VAE.
 
-The optimization aims to identify the density map whose calculated scattering profile best reproduces the experimental data.
+Candidate latent vectors are:
 
-The resulting latent representation is decoded by the trained VAE to produce a three-dimensional electron density map consistent with the provided XSS measurements.
+1. Generated using latent-space statistics.
+2. Decoded into electron-density maps.
+3. Converted into theoretical scattering curves.
+4. Compared against experimental XSS data.
+5. Selected and evolved according to their agreement with experiment.
 
-Example:
+The optimization seeks the density map whose calculated scattering profile most closely reproduces the measured XSS signal.
 
-```bash
-python main_reconstruction_ga_may25_absolute.py \
-    <reconstruction_parameters>
-```
+The resulting optimized latent representation is decoded by the trained VAE to produce a three-dimensional electron density map consistent with the experimental scattering data.
 
 ---
 
@@ -156,6 +251,7 @@ XSSDense/
 │
 ├── voxel_tf_fixed44.py
 ├── Train_VAE.py
+├── process_training_norms_absolute52.py
 ├── main_reconstruction_ga_may25_absolute.py
 │
 ├── data/
@@ -168,4 +264,31 @@ XSSDense/
 
 ## Requirements
 
-Install dependencies
+Example installation:
+
+```bash
+pip install tensorflow numpy scipy matplotlib h5py tqdm scikit-learn cupy
+```
+
+Additional dependencies may be required depending on the available GPU hardware and CUDA installation.
+
+---
+
+## Code Availability
+
+The implementation of XSSDense, including dataset preparation, VAE training, latent-space analysis, and reconstruction workflows, is publicly available at:
+
+https://github.com/LeoMonrroy266/XSSDense
+
+---
+
+## Citation
+
+```bibtex
+@article{XSSDense,
+  title={XSSDense: Reconstructing Electron Densities from X-ray Solution Scattering Data using a Variational Autoencoder},
+  author={Monrroy, Leonardo and collaborators},
+  journal={To be added},
+  year={To be added}
+}
+```
