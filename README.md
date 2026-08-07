@@ -124,10 +124,7 @@ These statistics define the region of latent space explored by the reconstructio
 ```bash
 python process_training_norms_absolute52.py \
     <model_directory> \
-    <reference.npy> \
-    <target.npy> \
-    <normalization_parameters.npz> \
-    <meta_directory> \
+    <tf_record path> \
     <output_directory>
 ```
 
@@ -138,8 +135,6 @@ latent_statistics/
 ├── latent_means.npy
 ├── latent_std.npy
 ├── latent_pca.png
-├── analysis_results/
-└── reconstructed_maps/
 ```
 
 These latent statistics are subsequently used by the genetic algorithm during reconstruction.
