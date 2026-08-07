@@ -44,7 +44,6 @@ Convert voxelized density maps stored as NumPy arrays into TensorFlow TFRecords.
 ```bash
 python voxel_tf_fixed44.py \
     voxel_directory/ \
-    reference.npy \
     tfrecord_output/
 ```
 
