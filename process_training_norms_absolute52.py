@@ -107,11 +107,7 @@ def plot_latent_pca(vae, tfrecord_path, save_path, batch_size=16):
 if __name__ == "__main__":
     model_dir = sys.argv[1]
     tfrecord_path = sys.argv[2]
-    params_file = sys.argv[3]
-    save_dir = sys.argv[4]
-
-    # Locate meta.json automatically
-    meta_json = sys.argv[5]
+    save_dir = sys.argv[3]
 
     # Restore VAE
     encoder = tf.keras.models.load_model(os.path.join(model_dir,"encoder_model.keras"))
