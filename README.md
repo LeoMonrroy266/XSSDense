@@ -37,32 +37,6 @@ python <reconstruction_script.py> \
     --model <trained_model>
 ```
 
----
-
-## Method Overview
-
-PDB Structures
-    |
-    v
-Voxelisation
-    |
-    v
-3D Density Maps
-    |
-    v
-Variational Autoencoder
-    |
-    v
-Latent Space Representation
-    |
-    v
-Reconstruction from XSS Data
-    |
-    v
-3D Electron Density Map
-
----
-
 ## Voxelisation
 
 Before training the VAE, PDB structures must be converted into 3D voxel grids representing the electron density distribution. The voxelisation process transforms atomic coordinates into fixed-size three-dimensional matrices that can be used as input for the neural network.
@@ -122,37 +96,5 @@ python <reconstruction_script.py> \
 
 ---
 
-## Repository Structure
 
-```text
-XSSDense/
-│
-├── <voxelisation_scripts>
-├── <training_scripts>
-├── <reconstruction_scripts>
-├── <utility_scripts>
-├── data/
-├── models/
-├── notebooks/
-└── README.md
-```
-
----
-
-## Requirements
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-or
-
-```bash
-conda env create -f environment.yml
-conda activate <environment_name>
-```
-
----
 
