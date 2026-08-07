@@ -52,7 +52,6 @@ python voxel_tf_fixed44.py \
 | Argument | Description |
 |-----------|-------------|
 | `voxel_directory` | Directory containing voxelized density maps in `.npy` format. |
-| `reference.npy` | Reference density map used for normalization. |
 | `tfrecord_output` | Directory where TFRecords and metadata are saved. |
 
 ---
