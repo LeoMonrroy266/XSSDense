@@ -15,7 +15,7 @@ PDB Structures
 Voxelisation
       │
       ▼
-3D Density Grids (.npy)
+3D Density Grids
       │
       ▼
 TFRecord Generation
