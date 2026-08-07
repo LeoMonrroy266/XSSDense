@@ -1,5 +1,18 @@
-#!/usr/bin/env python3
-# coding:utf-8
+# coding: utf-8
+
+"""
+Voxel-only TFRecord pipeline with global min–max normalization [0, 1]
+
+Input:
+- Directory of .npy files, each with shape (32, 32, 32)
+
+Output:
+- TFRecords (train/test)
+- Metadata JSON with normalization parameters
+
+Usage:
+  python voxels_to_tfrecords_minmax.py <voxels_dir> <output_dir>
+"""
 
 import os
 import sys
@@ -9,96 +22,98 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
+import h5py
+import hashlib
 
-# ───────────────────────────────
-# Config
-# ───────────────────────────────
-GRID_SIZE = 52  # change if needed
+# ─────────────────────────────────────────────
+# Configuration
+# ─────────────────────────────────────────────
+GRID_SIZE = 52
+TRAIN_SPLIT_MOD = 10      # every 5th sample → test
+NUM_THREADS = 8
 
-# ───────────────────────────────
+# ─────────────────────────────────────────────
 # TFRecord helpers
-# ───────────────────────────────
+# ─────────────────────────────────────────────
 def serialize_example(flat_array, index):
-    return tf.train.Example(features=tf.train.Features(feature={
-        "data": tf.train.Feature(float_list=tf.train.FloatList(value=flat_array)),
-        "index": tf.train.Feature(int64_list=tf.train.Int64List(value=[index])),
-    })).SerializeToString()
+    return tf.train.Example(
+        features=tf.train.Features(
+            feature={
+                "data": tf.train.Feature(
+                    float_list=tf.train.FloatList(value=flat_array)
+                ),
+                "index": tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=[index])
+                ),
+            }
+        )
+    ).SerializeToString()
 
 def write_tfrecord(filename, examples):
     with tf.io.TFRecordWriter(filename) as writer:
-        for ex in tqdm(examples, desc=f"Writing {filename}"):
+        for ex in tqdm(examples, desc=f"Writing {os.path.basename(filename)}"):
             writer.write(ex)
 
-def normalize_signed(data, M):
-    return (data / M).astype(np.float32)
-
-# ───────────────────────────────
+# ─────────────────────────────────────────────
 # Main workflow
-# ───────────────────────────────
-def run_workflow(npy_dir, reference_path, output_dir, num_threads=8):
+# ─────────────────────────────────────────────
+def run_workflow(voxels_dir, output_dir):
+
+    output_dir = os.path.abspath(output_dir)
 
     tf_out = os.path.join(output_dir, "tfrecords")
+    meta_out = os.path.join(output_dir, "meta")
+
     os.makedirs(tf_out, exist_ok=True)
+    os.makedirs(meta_out, exist_ok=True)
 
-    # Load reference
-    print("Loading reference...")
-    ref = np.load(reference_path)
+    # ------------------------------------------------
+    # Load voxel files
+    # ------------------------------------------------
+    with h5py.File(voxels_dir, "r") as voxels_file:
+        print(f"Loaded {len(voxels_file)} samples")
+        voxels = voxels_file['rho'][()]
+        # ------------------------------------------------
+        # Global min–max normalization to [0, 1]
+        # ------------------------------------------------
+        X_MIN = voxels.min()
+        X_MAX = voxels.max()
 
-    # Load all npy files
-    npy_files = sorted(glob.glob(os.path.join(npy_dir, "*.npy")))
-    npy_files = [f for f in npy_files if os.path.abspath(f) != os.path.abspath(reference_path)]
+        if X_MAX <= X_MIN:
+            raise RuntimeError(
+                f"Invalid normalization range: min={X_MIN}, max={X_MAX}"
+            )
 
-    if len(npy_files) == 0:
-        raise RuntimeError("No npy files found.")
+        voxels = (voxels - X_MIN) / (X_MAX - X_MIN)
+        voxels = voxels.astype(np.float32)
 
-    print(f"Found {len(npy_files)} samples")
+    # Sanity check
+    print(f"Normalization:")
+    print(f"  global min = {X_MIN:.6g}")
+    print(f"  global max = {X_MAX:.6g}")
+    print(f"  after norm → min={voxels.min():.3f}, max={voxels.max():.3f}")
 
-    # Compute differences
-    print("Computing differences...")
-    raw_diffs = []
-    names = []
-
-    for f in tqdm(npy_files):
-        arr = np.load(f)
-
-        if arr.shape != ref.shape:
-            raise ValueError(f"Shape mismatch: {f} {arr.shape} != {ref.shape}")
-
-        d = arr - ref
-        raw_diffs.append(d)
-        names.append(os.path.basename(f))
-
-    # Compute normalization constant
-    print("Computing normalization...")
-    M = max(max(abs(d.min()), abs(d.max())) for d in raw_diffs)
-
-    if M <= 0:
-        raise RuntimeError("Normalization constant M is non-positive.")
-
-    diff_norm_list = [normalize_signed(d, M) for d in raw_diffs]
-
-    # Serialize
-    print("Serializing TFRecords...")
-    examples_train, examples_test = [], []
+    # ------------------------------------------------
+    # Serialize to TFRecords
+    # ------------------------------------------------
+    examples_train = []
+    examples_test = []
 
     def process_sample(idx):
-        grid = diff_norm_list[idx]
-
-        # ensure correct shape (no pad needed if already correct)
-        if grid.shape != (GRID_SIZE, GRID_SIZE, GRID_SIZE):
-            raise ValueError(f"Unexpected shape: {grid.shape}")
-
-        flat = grid.flatten()
+        flat = voxels[idx].reshape(-1)
         return idx, serialize_example(flat, idx)
 
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
-        results = list(tqdm(
-            executor.map(process_sample, range(len(diff_norm_list))),
-            total=len(diff_norm_list)
-        ))
+    with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+        results = list(
+            tqdm(
+                executor.map(process_sample, range(len(voxels))),
+                total=len(voxels),
+                desc="Serializing"
+            )
+        )
 
     for idx, ex in results:
-        if idx % 5 == 0:
+        if idx % TRAIN_SPLIT_MOD == 0:
             examples_test.append(ex)
         else:
             examples_train.append(ex)
@@ -106,35 +121,42 @@ def run_workflow(npy_dir, reference_path, output_dir, num_threads=8):
     write_tfrecord(os.path.join(tf_out, "train.tfrecords"), examples_train)
     write_tfrecord(os.path.join(tf_out, "test.tfrecords"), examples_test)
 
-    # Save normalization params
-    np.savez(os.path.join(tf_out, "signed_norm_params.npz"),
-             type="signed", M=np.array([M], dtype=np.float64))
-
+    # ------------------------------------------------
     # Metadata
+    # ------------------------------------------------
     meta = {
         "grid_size": GRID_SIZE,
-        "reference": os.path.basename(reference_path),
-        "n_samples": len(diff_norm_list),
-        "M": float(M)
+        "voxel_shape": [GRID_SIZE, GRID_SIZE, GRID_SIZE],
+        "voxel_count": len(voxels),
+        "train_samples": len(examples_train),
+        "test_samples": len(examples_test),
+        "normalized": True,
+        "normalization": {
+            "type": "minmax",
+            "min": float(X_MIN),
+            "max": float(X_MAX),
+        },
+        "source_dir": voxels_dir,
     }
 
-    with open(os.path.join(tf_out, "meta.json"), "w") as f:
+    with open(os.path.join(meta_out, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
 
-    print("\nDone.")
-    print(f"TFRecords saved to: {tf_out}")
-    print(f"Normalization M: {M:.6g}")
+    print("TFRecord generation complete")
+    print(f"  Train TFRecord: {os.path.join(tf_out, 'train.tfrecords')}")
+    print(f"  Test TFRecord : {os.path.join(tf_out, 'test.tfrecords')}")
+    print(f"  Meta          : {os.path.join(meta_out, 'meta.json')}")
 
-# ───────────────────────────────
+# ─────────────────────────────────────────────
 # CLI
-# ───────────────────────────────
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python script.py <npy_dir> <reference.npy> <output_dir>")
+    if len(sys.argv) != 3:
+        print("Usage: python voxels_to_tfrecords_minmax.py <voxels_dir> <output_dir>")
         sys.exit(1)
 
-    npy_dir = sys.argv[1]
-    reference_path = sys.argv[2]
-    output_dir = sys.argv[3]
+    voxels_dir = sys.argv[1]
+    output_dir = sys.argv[2]
 
-    run_workflow(npy_dir, reference_path, output_dir)
+    run_workflow(voxels_dir, output_dir)
+
