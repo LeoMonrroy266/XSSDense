@@ -47,7 +47,7 @@ Genetic Algorithm Reconstruction
 
 Before starting, ensure the required dependencies are installed.
 
-Required packages typically include:
+Required packages:
 
 ```bash
 pip install tensorflow numpy scipy matplotlib scikit-learn cupy gemmi tqdm
