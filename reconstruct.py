@@ -849,13 +849,13 @@ if __name__ == "__main__":
         # -------------------------
         diff_norm = v[:D, :D, :D]
 
-        np.save(f"{output_folder}/{tag}_diff_norm.npy", diff_norm)
+        #np.save(f"{output_folder}/{tag}_diff_norm.npy", diff_norm)
 
-        create_ccp4_map_(
-            unnormalize_minmax(diff_norm ,xmin, xmax).clip(0),
-            f"{output_folder}/{tag}_diff.ccp4",
-            voxel_size=voxel_size
-        )
+        #create_ccp4_map_(
+        #    unnormalize_minmax(diff_norm ,xmin, xmax).clip(0),
+        #    f"{output_folder}/{tag}_diff.ccp4",
+        #    voxel_size=voxel_size
+        #)
 
         # -------------------------
         # Metadata
@@ -865,7 +865,7 @@ if __name__ == "__main__":
         np.save(f"{output_folder}/{tag}_alpha_score.npy", alpha_score)
         np.save(f"{output_folder}/{tag}_score.npy", score)
         np.save(f"{output_folder}/{tag}_drho.npy", drho)
-        np.save(f"{output_folder}/{tag}_shell.npy", shell)
+        np.save(f"{output_folder}/{tag}_shell_thickness.npy", shell)
 
         # -------------------------
         # Extrapolated density
@@ -873,11 +873,11 @@ if __name__ == "__main__":
         diff = unnormalize_minmax(diff_norm, xmin, xmax).clip(0)
         extrapolated = diff
 
-        np.save(f"{output_folder}/{tag}_extrapolated.npy", extrapolated)
+        np.save(f"{output_folder}/{tag}_density.npy", extrapolated)
 
         create_ccp4_map_(
             extrapolated,
-            f"{output_folder}/{tag}_extrapolated.ccp4",
+            f"{output_folder}/{tag}_density.ccp4",
             voxel_size=voxel_size
         )
 
@@ -925,19 +925,19 @@ if __name__ == "__main__":
             # ================================
     # SAVE GLOBAL ARRAYS
     # ================================
-    np.save(f"{output_folder}/top_voxels_all.npy", top_voxels)
-    np.save(f"{output_folder}/top_latents_all.npy", top_latents)
-    np.save(f"{output_folder}/top_scores_all.npy", top_scores)
-    np.save(f"{output_folder}/top_alphas_all.npy", top_alphas)
-    np.save(f"{output_folder}/top_alpha_scores_all.npy", top_alpha_scores)
-    np.save(f"{output_folder}/top_drhos_all.npy", top_drhos)
-    np.save(f"{output_folder}/top_shells_all.npy", top_shells)
+    #np.save(f"{output_folder}/top_voxels_all.npy", top_voxels)
+    #np.save(f"{output_folder}/top_latents_all.npy", top_latents)
+    #np.save(f"{output_folder}/top_scores_all.npy", top_scores)
+    #np.save(f"{output_folder}/top_alphas_all.npy", top_alphas)
+    #np.save(f"{output_folder}/top_alpha_scores_all.npy", top_alpha_scores)
+    #np.save(f"{output_folder}/top_drhos_all.npy", top_drhos)
+    #np.save(f"{output_folder}/top_shells_all.npy", top_shells)
 
-    np.save(f"{output_folder}/score_history.npy", np.array(history))
+    #np.save(f"{output_folder}/score_history.npy", np.array(history))
 
-    np.save(f"{output_folder}/absolute_scale.npy", ga.absolute_scale)
-    np.save(f"{output_folder}/absolute_drho.npy", ga.dark_drho)
-    np.save(f"{output_folder}/absolute_shell.npy", ga.dark_shell)
+    np.save(f"{output_folder}/fitted_abolute_alpha_scale.npy", ga.absolute_scale)
+    np.save(f"{output_folder}/fitted_absolute_drho.npy", ga.dark_drho)
+    np.save(f"{output_folder}/fitted_absolute_shell.npy", ga.dark_shell)
     logfile.close()
 
 
