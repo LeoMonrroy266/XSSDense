@@ -1,3 +1,12 @@
+## 📖 Documentation
+2
+ 
+3
+- docs/tutorial.md
+4
+- #quick-start
+5
+- #method-overview
 # XSSDense
 
 **Reconstructing electron densities from X-ray solution scattering data using a Variational Autoencoder**
