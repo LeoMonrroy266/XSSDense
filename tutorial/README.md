@@ -55,6 +55,212 @@ pip install tensorflow numpy scipy matplotlib scikit-learn cupy gemmi tqdm
 
 Additional dependencies may be required depending on your installation and cuda version.
 
+---
+
+# Reproducing the Included Example
+
+## Overview
+
+Before applying XSSDense to your own structures and experimental data, we recommend reproducing the included example dataset.
+
+This serves two purposes:
+
+1. Verifies that your installation is working correctly.
+2. Demonstrates the complete XSSDense workflow from training through reconstruction.
+
+The repository contains an example dataset and reference outputs that can be used to validate your results.
+
+```text
+example/
+├── data
+      ├── meta
+      └── tfrecords
+├── voxel_maps.h5
+├── ground_state.dat
+├── difference_signal.dat
+└── reference_results/
+```
+
+At the end of this tutorial your outputs should closely resemble the contents of:
+
+```text
+example/reference_results/
+```
+
+---
+
+## Example Workflow
+
+### Generate TFRecords
+
+Convert the provided voxel dataset into TFRecords:
+
+```bash
+python generate_tfrecord.py \
+    example/voxel_maps.h5 \
+    example_output/
+```
+
+Expected output:
+
+```text
+example_output/
+├── tfrecords
+│   ├── train.tfrecord
+│   └── test.tfrecord
+└── meta
+    └── meta.json
+```
+
+---
+
+### Train the β-VAE
+
+Train the VAE using the same settings used for the example reconstruction.
+
+```bash
+python Train_VAE.py \
+    example_output/tfrecords/train.tfrecord \
+    example_output/tfrecords/test.tfrecord \
+    lov2_model \
+    late \
+    1
+```
+
+Expected output:
+
+```text
+lov2_model/
+├── encoder_model.keras
+├── decoder_model.keras
+├── vae_epoch_1.weights.h5
+.
+.
+.
+├── vae_final.weights.h5
+└── log.txt
+```
+
+---
+
+### Generate Latent-Space Statistics
+
+Compute latent-space statistics from the trained model.
+
+```bash
+python process_training.py \
+    lov2_model/ \
+    example_output/tfrecords/train.tfrecord \
+    lov2_model/
+```
+
+Expected output:
+
+```text
+lov2_model/
+├── encoder_model.keras
+├── decoder_model.keras
+├── vae_epoch_1.weights.h5
+.
+.
+.
+├── vae_final.weights.h5
+├── log.txt
+├── latent_pca.png
+└── latents_stats.txt
+```
+
+---
+
+### Run Reconstruction
+
+Perform latent-space optimization using the included scattering data.
+
+```bash
+python reconstruct.py \
+    --model_path lov2_model/ \
+    --ground_scattering example/ground_state.dat \
+    -- output_folder lov2_reconstruction
+    -- params example_output/meta/meta.json \
+    -- meta_json 2.4 \
+    -- batch_size 16 \
+    -- max_iter 30 \
+    -- target_yield 0.15 \
+    -- yield_weight 2 \
+    -- latent_size 8 \
+    --iq_path example/difference_signal.dat \
+    --voxel example/voxel_maps.h5 \
+```
+
+Expected output:
+
+```text
+lov2_reconstruction/
+├── absolute_drho.npy
+├── absolute_scale.npy
+├── absolute_shell.npy
+├── final_rank0_alpha.npy
+├── final_rank0_alpha_score.npy
+├── final_rank0_deltaI.png
+├── final_rank0_diff.ccp4
+├── final_rank0_diff_norm.npy
+├── final_rank0_drho.npy
+├── final_rank0_extrapolated.ccp4
+├── final_rank0_extrapolated.npy
+├── final_rank0_drho.npy
+├── final_rank0_latent.npy
+├── final_rank0_score.npy
+├── final_rank0_shell.npy
+├── final_rank0_drho.npy
+.
+.
+.
+├── iteration_0.dat
+├── iteration_1.dat
+├── iteration_2.dat
+.
+.
+.
+├── iteration_29.dat
+└── log.txt
+
+```
+
+---
+
+## Comparing with the Reference Results
+
+After reconstruction, compare your outputs against:
+
+```text
+example/reference_results/
+```
+
+The following should be similar:
+
+- Reconstructed density maps
+- Reconstructed scattering curves
+- Latent-space solutions
+- Optimization convergence behaviour
+
+Small differences between runs are expected because the reconstruction uses stochastic initialization and genetic-algorithm optimization.
+
+---
+
+## Validation Checklist
+
+Before proceeding with your own data, verify that:
+
+- [ ] TFRecords were generated successfully.
+- [ ] The VAE completed training.
+- [ ] Encoder and decoder models were saved.
+- [ ] Latent statistics were generated.
+- [ ] Reconstruction completed successfully.
+- [ ] Results are similar to the provided reference outputs.
+
+Once the example workflow runs successfully, continue with the remaining sections of this tutorial and substitute your own structures and scattering data.
+
+
 # Step 1: Voxelise Structural Models
 
 ## Purpose
