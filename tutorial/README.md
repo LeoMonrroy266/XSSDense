@@ -84,16 +84,6 @@ The h5 file contains multiple 52 × 52 × 52 electron-density volumes.
 ---
 
 
-Expected output:
-
-```text
-(52, 52, 52)
-```
-
-All density maps should have identical dimensions.
-
----
-
 # Step 2: Generate TFRecords
 
 ## Purpose
