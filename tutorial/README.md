@@ -55,25 +55,6 @@ pip install tensorflow numpy scipy matplotlib scikit-learn
 
 Additional dependencies may be required depending on your installation.
 
----
-
-# Directory Structure
-
-A typical project may be organized as:
-
-```text
-project/
-├── pdb_structures/
-├── voxel_maps/
-├── tfrecords/
-├── trained_model/
-├── latent_statistics/
-├── experimental_data/
-└── reconstruction/
-```
-
----
-
 # Step 1: Voxelise Structural Models
 
 ## Purpose
@@ -95,14 +76,9 @@ pdb_structures/
 Output:
 
 ```text
-voxel_maps/
-├── structure1.npy
-├── structure2.npy
-├── structure3.npy
-└── ...
-```
+voxel_maps.h5
 
-Each file contains a 52 × 52 × 52 electron-density volume.
+The h5 file contains multiple 52 × 52 × 52 electron-density volumes.
 
 ---
 
@@ -138,8 +114,8 @@ Convert all voxelized density maps to TFRecords using:
 
 ```bash
 python voxel_tf_fixed44.py \
-    voxel_maps/ \
-    tfrecords/
+    voxel_maps.h5 \
+    save_dir/
 ```
 
 ---
@@ -148,18 +124,18 @@ python voxel_tf_fixed44.py \
 
 ### Input Directory
 
-Directory containing voxelized density maps:
+H5 file containing voxelized density maps:
 
 ```text
-voxel_maps/
+voxel_maps.h5
 ```
 
 ### Output Directory
 
-Directory where TFRecords will be written:
+Directory where TFRecords and metadata will be written:
 
 ```text
-tfrecords/
+save_dir/
 ```
 
 ---
@@ -167,20 +143,20 @@ tfrecords/
 ## Expected Output
 
 ```text
-tfrecords/
-├── train.tfrecord
-├── test.tfrecord
-└── metadata.json
+save_dir/
+├── tfrecords
+      ├──train.tfrecord
+      └──test.tfrecord
+└──meta
+      └── meta.json
 ```
-
-Depending on script version, additional metadata files may also be generated.
 
 ---
 
 ## Verify Output
 
 ```bash
-ls tfrecords/
+ls save_dir/tf_records
 ```
 
 Ensure the training and test TFRecords were created successfully before continuing.
@@ -213,6 +189,26 @@ Reconstructed Density Map
 
 ---
 
+## Training Arguments
+
+```bash
+python Train_VAE.py \
+    train.tfrecord \
+    test.tfrecord \
+    save_dir \
+    mode \
+    beta
+```
+
+Where:
+
+- `train.tfrecord` = training dataset
+- `test.tfrecord` = independent test dataset
+- `save_dir` = output directory 
+- `mode` = `constant` or `late`
+- `beta` = β value
+
+---
 ## Training Modes
 
 Two β scheduling options are available.
@@ -225,9 +221,9 @@ Uses a fixed β value throughout training.
 python Train_VAE.py \
     train.tfrecord \
     test.tfrecord \
-    beta1 \
+    save_dir \
     constant \
-    1.0
+    0.5
 ```
 
 ### β Warm-Up
@@ -238,33 +234,12 @@ Gradually increases β during training.
 python Train_VAE.py \
     train.tfrecord \
     test.tfrecord \
-    beta10 \
+    save_dir \
     late \
-    10.0
+    1
 ```
 
 This is typically recommended for improved latent-space organization.
-
----
-
-## Training Arguments
-
-```bash
-python Train_VAE.py \
-    train.tfrecord \
-    test.tfrecord \
-    experiment_name \
-    mode \
-    beta
-```
-
-Where:
-
-- `train.tfrecord` = training dataset
-- `test.tfrecord` = independent test dataset
-- `experiment_name` = output identifier
-- `mode` = `constant` or `late`
-- `beta` = β value
 
 ---
 
@@ -287,9 +262,13 @@ A healthy training process typically shows decreasing reconstruction and validat
 Upon completion:
 
 ```text
-_log/
+save_dir/
 ├── encoder_model.keras
 ├── decoder_model.keras
+├── vae_epoch_1.weights.h5
+.
+.
+.
 ├── vae_final.weights.h5
 └── log.txt
 ```
@@ -318,7 +297,7 @@ These statistics guide the genetic algorithm toward realistic regions of latent 
 
 ```bash
 python process_training_norms_absolute52.py \
-    trained_model/ \
+    path_to_trained_model/ \
     train.tfrecord \
     latent_statistics/
 ```
@@ -328,10 +307,15 @@ python process_training_norms_absolute52.py \
 ## Inputs
 
 ```text
-trained_model/
+path_to_trained_model/
 ├── encoder_model.keras
 ├── decoder_model.keras
-└── vae_final.weights.h5
+├── vae_epoch_1.weights.h5
+.
+.
+.
+├── vae_final.weights.h5
+└── log.txt
 ```
 
 ```text
@@ -343,14 +327,11 @@ train.tfrecord
 ## Outputs
 
 ```text
-latent_statistics/
+path_to_trained_model/
 ├── latent_means.npy
 ├── latent_std.npy
 ├── latent_pca.png
 ```
-
-Additional outputs may be generated depending on script version.
-
 ---
 
 ## Verify Statistics
@@ -365,7 +346,7 @@ print(means.shape)
 print(stds.shape)
 ```
 
-The dimensions should match the VAE latent dimension.
+The dimensions should match the VAE latent dimension of 8.
 
 ---
 
