@@ -186,18 +186,6 @@ lov2_reconstruction/
 └── log.txt
 ```
 
----
-
-## Validation Checklist
-
-- [ ] TFRecords generated successfully
-- [ ] β-VAE training completed
-- [ ] Encoder and decoder saved
-- [ ] Latent statistics generated
-- [ ] Reconstruction completed
-- [ ] Results resemble reference outputs
-
----
 
 # Using Your Own Data
 
@@ -338,32 +326,6 @@ Evolution
 ```
 
 A genetic algorithm searches latent space for density maps that best reproduce the experimental XSS signal.
-
----
-
-# Troubleshooting
-
-### TFRecord Generation Fails
-
-- Verify input files exist
-- Check permissions
-- Ensure output directories are writable
-
-### Training Fails
-
-- Confirm TensorFlow installation
-- Check GPU memory availability
-- Verify TFRecord compatibility
-
-### Poor Reconstruction Convergence
-
-- Increase training-set diversity
-- Increase population size
-- Increase optimization iterations
-- Verify experimental scaling
-- Re-train with improved β scheduling
-
----
 
 # Citation
 
