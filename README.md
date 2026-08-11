@@ -220,6 +220,7 @@ python reconstruct.py \
     --ground_scattering example/ground_state.dat \
     --iq_path example/difference_signal.dat \
     --params example_output/meta/meta.json \
+    --voxel  example/voxel_maps.h5\
     --output_folder lov2_reconstruction \
     --meta_json 2.4 \
     --latent_size 8 \
