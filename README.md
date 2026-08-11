@@ -266,31 +266,17 @@ The resulting optimized latent representation is decoded by the trained VAE to p
 ---
 
 ## Citation
-2
- 
-3
+
 If you use XSSDense in your research, please cite:
-4
- 
-5
+
 ```bibtex
-6
 @article{Monrroy2026.08.07.743437,
-7
-author = {Monrroy, Leonardo and Cardoch, Sebastian and Westenhoff, Sebastian},
-8
-title = {XSSDense: Time-resolved X-ray Solution Scattering Density Reconstruction Using a Variational Autoencoder},
-9
-journal = {bioRxiv},
-10
-year = {2026},
-11
-doi = {10.64898/2026.08.07.743437},
-12
-elocation-id = {2026.08.07.743437},
-13
-publisher = {Cold Spring Harbor Laboratory}
-14
+  author = {Monrroy, Leonardo and Cardoch, Sebastian and Westenhoff, Sebastian},
+  title = {XSSDense: Time-resolved X-ray Solution Scattering Density Reconstruction Using a Variational Autoencoder},
+  journal = {bioRxiv},
+  year = {2026},
+  doi = {10.64898/2026.08.07.743437},
+  elocation-id = {2026.08.07.743437},
+  publisher = {Cold Spring Harbor Laboratory}
 }
-15
 ```
