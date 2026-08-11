@@ -50,10 +50,10 @@ Before starting, ensure the required dependencies are installed.
 Required packages typically include:
 
 ```bash
-pip install tensorflow numpy scipy matplotlib scikit-learn
+pip install tensorflow numpy scipy matplotlib scikit-learn cupy gemmi tqdm
 ```
 
-Additional dependencies may be required depending on your installation.
+Additional dependencies may be required depending on your installation and cuda version.
 
 # Step 1: Voxelise Structural Models
 
