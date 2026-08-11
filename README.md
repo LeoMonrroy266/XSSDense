@@ -173,6 +173,8 @@ python Train_VAE.py \
     1
 ```
 
+The output directory created contains the final encoder and decoder model as well as the weights of them over the different epochs and a log file that contains the losses over the epochs. 
+
 Output:
 
 ```text
@@ -193,7 +195,7 @@ python process_training.py \
     lov2_model/ \
     example_output/tfrecords/train.tfrecord \
     lov2_model/
-```
+``` 
 
 Output:
 
