@@ -8,9 +8,9 @@ import cupy as cp
 import tensorflow as tf
 import h5py
 
-import map2iq_constant_grid_excessGPU as map2iq
+import map2iq_GPU as map2iq
 from VAE import VAE
-from density_manipulation_march05 import create_ccp4_map_
+from density_manipulation import create_ccp4_map_
 from data_class_GPU import ScatterData
 
 from cupyx.scipy import ndimage as cpx_nd
@@ -18,7 +18,7 @@ from cupyx.scipy.ndimage import distance_transform_edt
 from cupyx.scipy import fft as cpx_fft
 import matplotlib.pyplot as plt
 
-from process_training_norms_may08_absolute import unnormalize_minmax
+from process_training import unnormalize_minmax
 
 
 def unnormalize_minmax(x_norm, xmin, xmax):
