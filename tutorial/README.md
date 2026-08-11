@@ -93,7 +93,7 @@ Training is performed using TensorFlow TFRecord datasets.
 Convert all voxelized density maps to TFRecords using:
 
 ```bash
-python voxel_tf_fixed44.py \
+python generate_tfrecord.py \
     voxel_maps.h5 \
     save_dir/
 ```
@@ -125,8 +125,8 @@ save_dir/
 ```text
 save_dir/
 ├── tfrecords
-      ├──train.tfrecord
-      └──test.tfrecord
+      ├──train.tfrecords
+      └──test.tfrecords
 └──meta
       └── meta.json
 ```
@@ -220,6 +220,18 @@ python Train_VAE.py \
 ```
 
 This is typically recommended for improved latent-space organization.
+
+## Replicating LOV2 results
+To reproduce the files in the example folder we will run the following to replicate the result of the LOV2 case:
+
+```bash
+python Train_VAE.py \
+    train.tfrecord \
+    test.tfrecord \
+    save_dir \
+    late \
+    1
+```
 
 ---
 
