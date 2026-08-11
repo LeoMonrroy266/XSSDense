@@ -77,6 +77,7 @@ Output:
 
 ```text
 voxel_maps.h5
+```
 
 The h5 file contains multiple 52 × 52 × 52 electron-density volumes.
 
