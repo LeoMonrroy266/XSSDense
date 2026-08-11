@@ -19,7 +19,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import pearsonr
-from density_manipulation_march05 import create_ccp4_map_  # must exist
+from density_manipulation import create_ccp4_map_  # must exist
 
 
 # ───────────────────────────────
