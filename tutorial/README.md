@@ -83,18 +83,6 @@ The h5 file contains multiple 52 × 52 × 52 electron-density volumes.
 
 ---
 
-## Verify Voxel Files
-
-After voxelisation, verify one output file:
-
-```python
-import numpy as np
-
-density = np.load("structure1.npy")
-
-print(density.shape)
-```
----
 
 Expected output:
 
