@@ -94,6 +94,7 @@ density = np.load("structure1.npy")
 
 print(density.shape)
 ```
+---
 
 Expected output:
 
