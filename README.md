@@ -44,7 +44,59 @@ Genetic Algorithm Reconstruction
       ▼
 3D Electron Density Map
 ```
+# Method Overview
 
+## Voxelisation
+
+Atomic coordinates are converted into fixed-size electron-density volumes suitable for neural-network training.
+
+## β-VAE Training
+
+```text
+Density Map
+      │
+      ▼
+Encoder
+      │
+      ▼
+Latent Vector
+      │
+      ▼
+Decoder
+      │
+      ▼
+Reconstructed Density Map
+```
+
+The VAE learns a compressed latent representation of structural variability.
+
+## Latent-Space Analysis
+
+Statistics of the encoded training distribution are computed and used to guide reconstruction toward physically realistic regions of latent space.
+
+## Reconstruction
+
+```text
+Latent Vector
+      │
+      ▼
+Decoder
+      │
+      ▼
+Density Map
+      │
+      ▼
+Scattering Calculation
+      │
+      ▼
+Comparison with Experiment
+      │
+      ▼
+Fitness Score
+      │
+      ▼
+Evolution
+```
 
 # Installation
 
