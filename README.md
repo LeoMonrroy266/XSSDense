@@ -119,7 +119,7 @@ Depending on your CUDA and TensorFlow configuration, additional packages may be 
 
 # Quick Start Tutorial
 
-The included example dataset reproduces the complete XSSDense pipeline and serves as an installation and workflow validation test.
+The example dataset found in: https://doi.org/10.5281/zenodo.21915224 reproduces the complete XSSDense pipeline and serves as an installation and workflow validation test.
 
 ## Example Dataset
 
