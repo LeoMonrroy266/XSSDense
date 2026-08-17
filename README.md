@@ -98,8 +98,35 @@ Fitness Score
 Evolution
 ```
 
-# Installation
+# System Requirements
+All code has been tested on a system using the following setup: 
 
+### Operating System
+- Rocky Linux 8.10
+
+### CUDA version
+- 13.2
+
+### Python
+- Python 3.11.3
+
+### Main Dependencies
+- TensorFlow 2.20
+- NumPy 1.26.4
+- SciPy 1.17
+- Matplotlib 3.10
+- scikit-learn 1.6.1
+- CuPy-cuda13x 13.6.0
+- Gemmi 0.7.4
+- tqdm 4.67.1
+
+
+### Hardware
+
+- GPU: NVIDIA Tesla A100 HGX GPU 40GB VRAM
+- CPU: 2 x 32 core Intel(R) Xeon(R) Gold 6338
+
+# Installation
 Clone the repository:
 
 ```bash
@@ -110,16 +137,20 @@ cd XSSDense
 Install dependencies:
 
 ```bash
-pip install tensorflow numpy scipy matplotlib scikit-learn cupy gemmi tqdm
+pip install tensorflow numpy scipy matplotlib scikit-learn cupy-cuda13x gemmi tqdm
 ```
 
-Depending on your CUDA and TensorFlow configuration, additional packages may be required.
+Depending on your CUDA version and GPU architecture, versions other than those listed above may be required. 
+
+### Installation Time
+Installation typically requires 10–20 minutes, depending on the TensorFlow and CUDA configuration.
+ 
 
 ---
 
 # Quick Start Tutorial
 
-The example dataset found in: https://doi.org/10.5281/zenodo.21915224 reproduces the complete XSSDense pipeline and serves as an installation and workflow validation test.
+The example dataset available at https://doi.org/10.5281/zenodo.21915224 reproduces the LOV2 unfolding case presented in the accompanying manuscript. By following the workflow described below, users can reproduce the complete XSSDense pipeline, validate the software installation, and verify the expected outputs.
 
 ## Example Dataset
 
@@ -142,6 +173,8 @@ example/reference_results/
 ## Step 1: Generate TFRecords
 
 Convert voxelized density maps into TensorFlow TFRecords.
+
+Expected runtime: ~5 min.
 
 ```bash
 python generate_tfrecord.py \
@@ -174,6 +207,8 @@ python Train_VAE.py \
 ```
 
 The output directory created contains the final encoder and decoder model as well as the weights of them over the different epochs and a log file that contains the losses over the epochs. 
+
+Expected runtime: ~2 hrs .
 
 Output:
 
@@ -210,6 +245,7 @@ lov2_model/
 └── latent_stats.txt
 ```
 
+Expected runtime: 5 min.
 ---
 
 ## Step 4: Reconstruct Electron Density
@@ -241,10 +277,23 @@ lov2_reconstruction/
 └── log.txt
 ```
 
+Expected runtime: 50 min.
 
 # Using Your Own Data
 
-## 1. Voxelise Structures
+## Instructions for Use
+
+To analyze a new system, users should:
+
+1. Generate voxelized density maps from structural models.
+2. Convert the voxel maps to TFRecords.
+3. Train a β-VAE model.
+4. Compute latent-space statistics.
+5. Supply experimental scattering data.
+6. Run latent-space reconstruction.
+7. Analyze the resulting CCP4 density maps.
+
+## 1. Voxelize Structures
 
 Input:
 
@@ -339,15 +388,19 @@ A genetic algorithm searches latent space for density maps that best reproduce t
   doi = {10.64898/2026.08.07.743437}
 }
 ```
+# License
 
----
+XSSDense is distributed under the GNU General Public License v3.0 (GPL-3.0).
 
-## Expected Outcome
+See the LICENSE file for the full license text.
 
-After completing the workflow, users will obtain:
 
-- A trained β-VAE model
-- Latent-space statistics
-- Optimized latent-space solutions
-- Three-dimensional reconstructed electron-density maps
-- Scattering profiles consistent with experimental XSS observations
+# Code Availability
+
+The XSSDense source code is freely available at:
+
+https://github.com/Westenhoff-Lab/XSSDense
+
+The example dataset used to validate installation and reproduce the workflow is available at:
+
+https://doi.org/10.5281/zenodo.21915224
